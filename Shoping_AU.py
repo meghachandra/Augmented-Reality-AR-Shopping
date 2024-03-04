@@ -1,5 +1,6 @@
 import cv2
 from PIL import Image
+import cv2.aruco as aruco
 
 # Define product information (replace with actual product data)
 products = {
@@ -13,6 +14,10 @@ cap = cv2.VideoCapture(0)
 # Load product images
 product_images = {name: cv2.imread(products[name]["image"]) for name in products}
 
+# Define Aruco dictionary and parameters
+aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_1000)
+aruco_params = aruco.DetectorParameters_create()
+
 while True:
   # Capture frame-by-frame
   ret, frame = cap.read()
@@ -20,29 +25,32 @@ while True:
   # Convert frame to grayscale for easier processing
   gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-  # Detect AR marker (replace with actual marker detection code)
-  # You can use libraries like OpenCV's Aruco for marker detection
-  marker_detected, marker_data = detect_marker(gray)
+  # Detect AR markers
+  corners, marker_ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=aruco_params)
 
-  if marker_detected:
-    # Get product information based on marker data
-    product_info = products.get(marker_data)
-    
-    if product_info:
-      # Load product image based on marker data
-      product_image = product_images[marker_data]
+  if marker_ids is not None:
+    for corner, marker_id in zip(corners, marker_ids):
+      # Get product information based on marker ID (assuming marker image filename matches ID)
+      product_info = products.get(f"marker{marker_id[0]}.jpg")
 
-      # Resize product image to fit on screen (adjust as needed)
-      product_image_resized = cv2.resize(product_image, (200, 200))
+      if product_info:
+        # Load product image
+        product_image = product_images[f"marker{marker_id[0]}.jpg"]
 
-      # Define overlay position (adjust as needed)
-      x, y = 100, 100
+        # Resize product image to fit on screen (adjust as needed)
+        product_image_resized = cv2.resize(product_image, (200, 200))
 
-      # Overlay product image on the frame
-      frame[y:y+product_image_resized.shape[0], x:x+product_image_resized.shape[1]] = product_image_resized
+        # Define overlay position (adjust as needed)
+        x, y = 100, 100
 
-      # Add product information text
-      cv2.putText(frame, f"{product_info['name']}: ${product_info['price']}", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        # Overlay product image on the frame
+        frame[y:y+product_image_resized.shape[0], x:x+product_image_resized.shape[1]] = product_image_resized
+
+        # Add product information text
+        cv2.putText(frame, f"{product_info['name']}: ${product_info['price']}", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+
+        # Draw marker (optional)
+        aruco.drawDetectedMarkers(frame, corners, marker_ids)
 
   # Display the resulting frame
   cv2.imshow('AR Shopping', frame)
@@ -54,9 +62,3 @@ while True:
 # Release capture and close all windows
 cap.release()
 cv2.destroyAllWindows()
-
-# Function to detect marker (replace with actual implementation)
-def detect_marker(gray_frame):
-  # Implement marker detection logic using OpenCV's Aruco or other libraries
-  # This function should return True/False for marker detection and marker data if detected
-  return False, None
