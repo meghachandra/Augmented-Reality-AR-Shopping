@@ -15,7 +15,7 @@ cap = cv2.VideoCapture(0)
 product_images = {name: cv2.imread(products[name]["image"]) for name in products}
 
 # Define Aruco dictionary and parameters
-aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_1000)
+aruco_dict = cv2.aruco.Dictionary_getPredefinedDictionary(cv2.aruco.DICT_4X4_1000)
 aruco_params = aruco.DetectorParameters_create()
 
 while True:
